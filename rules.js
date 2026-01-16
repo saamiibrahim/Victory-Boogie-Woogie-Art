@@ -117,6 +117,95 @@ class DotRule {
     }
 }
 
+class colorChangeRule {
+    constructor() {
+        this.name = "Color Change Rule ";
+        this.description = "Changing color of some blocks to different color";
+    }
+
+    apply(data) {
+        if (!data || !data.shapes) return;
+
+        const mundrianColors = ['#C53018', '#1A56A4', '#F0CF00', '#131533'];
+        const excludedColors = ['#EAECEC', '#CBD5DD', '#FFFFFF', '#ffffff', '#eaecec', '#cbd5dd'];
+
+        let count = 0;
+        // data.shapes.length
+        for (let i = 0; i < data.shapes.length; i++) {
+            let shape = data.shapes[i];
+
+            // 1. Target Selection: Large Blocks
+            // if (shape.type !== 'rect') continue;
+            // if (shape.width < MIN_SIZE || shape.height < MIN_SIZE) continue;
+
+            // 2. Color Exclusion
+            let fillCol = shape.fill ? shape.fill.toUpperCase() : 'NONE';
+
+            if (!shape.fill || excludedColors.includes(fillCol) || shape.fill === 'none') continue;
+
+            // Repaint shape with new color  
+            if (random() > 0.15) continue;
+
+            // Find Neighbors and their colors
+            let neighborColors = new Set();
+            neighborColors.add(fillCol); // Don't pick same as self
+
+            // Small epsilon for "touching" calculation
+            const EPSILON = 3;
+
+            for (let j = 0; j < data.shapes.length; j++) {
+                if (i === j) continue;
+                let other = data.shapes[j];
+                if (other.type !== 'rect') continue;
+
+                // Check if 'other' is strictly adjacent (touching edges)
+
+                // Vertical overlap check
+                let vOverlap = max(shape.y, other.y) < min(shape.y + shape.height, other.y + other.height) - EPSILON;
+                // Horizontal overlap check
+                let hOverlap = max(shape.x, other.x) < min(shape.x + shape.width, other.x + other.width) - EPSILON;
+
+                let touchingLeft = abs(shape.x - (other.x + other.width)) < EPSILON;
+                let touchingRight = abs((shape.x + shape.width) - other.x) < EPSILON;
+                let touchingTop = abs(shape.y - (other.y + other.height)) < EPSILON;
+                let touchingBottom = abs((shape.y + shape.height) - other.y) < EPSILON;
+
+                let isNeighbor = false;
+                if (vOverlap && (touchingLeft || touchingRight)) isNeighbor = true;
+                if (hOverlap && (touchingTop || touchingBottom)) isNeighbor = true;
+
+                if (isNeighbor && other.fill && other.fill !== 'none') {
+                    // console.log(`Found neighbor for block ${i}: color ${other.fill}`);
+                    neighborColors.add(other.fill.toUpperCase());
+                }
+            }
+
+            let newColor = random(mundrianColors);
+
+            // Constraint: New color MUST be different from old color AND neighbors
+            let attempts = 0;
+            // Check if chosen color is in the excluded set
+            while (neighborColors.has(newColor.toUpperCase()) && attempts < 20) {
+                newColor = random(mundrianColors);
+                attempts++;
+            }
+
+            // If we failed to find a unique color (unlikely but possible if surrounded by all colors),
+            // just keep the original or take the last random choice.
+            // If strictly enforcing change, we might skip update if attempts maxed out.
+            if (neighborColors.has(newColor.toUpperCase())) {
+                // Could not find valid color, skip
+                continue;
+            }
+
+            shape.fill = newColor;
+            count++;
+        }
+        console.log(`[Rule: ${this.name}] applied to ${count} blocks.`);
+    }
+}
+
 const ACTIVE_RULES = [
-    new DotRule()
+    new colorChangeRule(), // Run color changes FIRST
+    new DotRule()          // Then add dots (so they contrast with new colors)
 ];

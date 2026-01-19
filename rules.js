@@ -126,7 +126,9 @@ class colorChangeRule {
     apply(data) {
         if (!data || !data.shapes) return;
 
-        const mundrianColors = ['#C53018', '#1A56A4', '#F0CF00', '#131533'];
+        // const mundrianColors = ['#C53018', '#1A56A4', '#F0CF00', '#131533'];
+        const mundrianColors = ['#C53018', '#1A56A4', '#F0CF00', '#D2CDA3'];
+
         const excludedColors = ['#EAECEC', '#CBD5DD', '#FFFFFF', '#ffffff', '#eaecec', '#cbd5dd'];
 
         let count = 0;
